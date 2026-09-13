@@ -315,6 +315,25 @@ let audioLoaded = false
 Module.downloadMap = (lock, mapName) => {
 	if(!audioLoaded) {
 		audioLoaded = true
+		loadAudio() // fire and forget; audio loads in background
+	}
+	function _release() {
+		Atomics.store(HEAP32, lock, 0)
+		Atomics.notify(HEAP32, lock)
+	}
+	dataLoader.loadMapWithDeps(mapName).then(_release, function(err) {
+		try { Module.printErr('DownloadMap error: ' + (err && err.message ? err.message : err)); } catch(e) {}
+		_release()
+	})
+}
+```[cite: 1]
+
+Replace that entire function with this version:
+
+```javascript
+Module.downloadMap = (lock, mapName) => {
+	if(!audioLoaded) {
+		audioLoaded = true
 		loadAudio()
 	}
 
@@ -330,10 +349,20 @@ Module.downloadMap = (lock, mapName) => {
 		}
 	}
 
-	dataLoader.loadMapWithDeps(mapName).then(_release, function(err) {
-		try { Module.printErr('DownloadMap error: ' + (err && err.message ? err.message : err)); } catch(e) {}
-		_release()
-	})
+	// Load the requested map directly and notify the engine lock immediately
+	dataLoader.loadMapCached(mapName)
+		.then(() => {
+			_release()
+			// Prefetch next map in background without blocking the active map
+			const nextIdx = dataLoader.mapsOrdered.indexOf(mapName) + 1
+			if (nextIdx > 0 && nextIdx < dataLoader.mapsOrdered.length) {
+				dataLoader.loadMapCached(dataLoader.mapsOrdered[nextIdx]).catch(() => {})
+			}
+		})
+		.catch((err) => {
+			try { Module.printErr('DownloadMap error: ' + (err && err.message ? err.message : err)); } catch(e) {}
+			_release()
+		})
 }
 
 // end include: emscripten/pre.js
