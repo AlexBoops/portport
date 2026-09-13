@@ -11515,7 +11515,7 @@ async function createWasm() {
         delete AL.buffers[bufId];
         AL.freeIds.push(bufId);
       }
-    
+  	}
   }
   
   _alDeleteBuffers.sig = 'vip';
@@ -33644,5 +33644,6 @@ run();
 		setTimeout(function() { Module._showLoadText = false; Module.setStatus(''); }, 1000);
 	})
 })();
+}
 // end include: emscripten/post.js
 
