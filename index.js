@@ -335,17 +335,7 @@ Module.downloadMap = (lock, mapName) => {
 		loadAudio()
 	}
 
-```[cite: 2]
 
-Because the old copy was left above the new one, the old function with the unshifted `Atomics` lock and the blocking `loadMapWithDeps` runs first or causes parsing issues[cite: 2].
-
----
-
-### Step 1: Fix `index.js` in your Repository
-
-In `index.js`, find lines 255 to 305[cite: 2]. Replace **both** copies of `Module.downloadMap` with just this single, correct version[cite: 2]:
-
-```javascript
 const dataLoader = new DataLoader()
 let audioLoaded = false
 
