@@ -312,6 +312,7 @@ async function loadAudio() {
 const dataLoader = new DataLoader()
 let audioLoaded = false
 
+// FIRST DEFINITION (Old, broken Atomics lock without bitshift):
 Module.downloadMap = (lock, mapName) => {
 	if(!audioLoaded) {
 		audioLoaded = true
@@ -326,6 +327,27 @@ Module.downloadMap = (lock, mapName) => {
 		_release()
 	})
 }
+
+// SECOND DEFINITION (Immediately below it):
+Module.downloadMap = (lock, mapName) => {
+	if(!audioLoaded) {
+		audioLoaded = true
+		loadAudio()
+	}
+...
+```[cite: 2]
+
+Because the old copy was left above the new one, the old function with the unshifted `Atomics` lock and the blocking `loadMapWithDeps` runs first or causes parsing issues[cite: 2].
+
+---
+
+### Step 1: Fix `index.js` in your Repository
+
+In `index.js`, find lines 255 to 305[cite: 2]. Replace **both** copies of `Module.downloadMap` with just this single, correct version[cite: 2]:
+
+```javascript
+const dataLoader = new DataLoader()
+let audioLoaded = false
 
 Module.downloadMap = (lock, mapName) => {
 	if(!audioLoaded) {
@@ -345,11 +367,9 @@ Module.downloadMap = (lock, mapName) => {
 		}
 	}
 
-	// Load the requested map directly and notify the engine lock immediately
 	dataLoader.loadMapCached(mapName)
 		.then(() => {
 			_release()
-			// Prefetch next map in background without blocking the active map
 			const nextIdx = dataLoader.mapsOrdered.indexOf(mapName) + 1
 			if (nextIdx > 0 && nextIdx < dataLoader.mapsOrdered.length) {
 				dataLoader.loadMapCached(dataLoader.mapsOrdered[nextIdx]).catch(() => {})
@@ -360,6 +380,8 @@ Module.downloadMap = (lock, mapName) => {
 			_release()
 		})
 }
+
+// end include: emscripten/pre.js
 
 // end include: emscripten/pre.js
 
