@@ -326,11 +326,7 @@ Module.downloadMap = (lock, mapName) => {
 		_release()
 	})
 }
-```[cite: 1]
 
-Replace that entire function with this version:
-
-```javascript
 Module.downloadMap = (lock, mapName) => {
 	if(!audioLoaded) {
 		audioLoaded = true
