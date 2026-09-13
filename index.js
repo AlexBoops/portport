@@ -11521,7 +11521,7 @@ async function createWasm() {
           continue;
         }
   
-        AL.deviceRefCounts[AL.buffers[bufId].deviceId]--;
+		AL.deviceRefCounts[AL.buffers[bufId].deviceId]--;
         delete AL.buffers[bufId];
         AL.freeIds.push(bufId);
       }
