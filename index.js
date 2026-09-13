@@ -33644,6 +33644,3 @@ run();
 		setTimeout(function() { Module._showLoadText = false; Module.setStatus(''); }, 1000);
 	})
 })();
-}
-// end include: emscripten/post.js
-
