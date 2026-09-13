@@ -312,33 +312,6 @@ async function loadAudio() {
 const dataLoader = new DataLoader()
 let audioLoaded = false
 
-// FIRST DEFINITION (Old, broken Atomics lock without bitshift):
-Module.downloadMap = (lock, mapName) => {
-	if(!audioLoaded) {
-		audioLoaded = true
-		loadAudio() // fire and forget; audio loads in background
-	}
-	function _release() {
-		Atomics.store(HEAP32, lock, 0)
-		Atomics.notify(HEAP32, lock)
-	}
-	dataLoader.loadMapWithDeps(mapName).then(_release, function(err) {
-		try { Module.printErr('DownloadMap error: ' + (err && err.message ? err.message : err)); } catch(e) {}
-		_release()
-	})
-}
-
-// SECOND DEFINITION (Immediately below it):
-Module.downloadMap = (lock, mapName) => {
-	if(!audioLoaded) {
-		audioLoaded = true
-		loadAudio()
-	}
-
-
-const dataLoader = new DataLoader()
-let audioLoaded = false
-
 Module.downloadMap = (lock, mapName) => {
 	if(!audioLoaded) {
 		audioLoaded = true
@@ -348,31 +321,28 @@ Module.downloadMap = (lock, mapName) => {
 	function _release() {
 		try {
 			if (typeof HEAP32 !== 'undefined' && lock) {
-				const idx = lock >> 2
-				Atomics.store(HEAP32, idx, 0)
-				Atomics.notify(HEAP32, idx)
+				const idx = lock >> 2;
+				Atomics.store(HEAP32, idx, 0);
+				Atomics.notify(HEAP32, idx);
 			}
 		} catch(e) {
-			console.warn('Lock release error non-fatal:', e)
+			console.warn('Lock release error non-fatal:', e);
 		}
 	}
 
 	dataLoader.loadMapCached(mapName)
 		.then(() => {
-			_release()
-			const nextIdx = dataLoader.mapsOrdered.indexOf(mapName) + 1
+			_release();
+			const nextIdx = dataLoader.mapsOrdered.indexOf(mapName) + 1;
 			if (nextIdx > 0 && nextIdx < dataLoader.mapsOrdered.length) {
-				dataLoader.loadMapCached(dataLoader.mapsOrdered[nextIdx]).catch(() => {})
+				dataLoader.loadMapCached(dataLoader.mapsOrdered[nextIdx]).catch(() => {});
 			}
 		})
 		.catch((err) => {
 			try { Module.printErr('DownloadMap error: ' + (err && err.message ? err.message : err)); } catch(e) {}
-			_release()
-		})
-}
-
-// end include: emscripten/pre.js
-
+			_release();
+		});
+};
 // end include: emscripten/pre.js
 
 
@@ -381,7 +351,6 @@ var thisProgram = './this.program';
 var quit_ = (status, toThrow) => {
   throw toThrow;
 };
-
 // In MODULARIZE mode _scriptName needs to be captured already at the very top of the page immediately when the page is parsed, so it is generated there
 // before the page load. In non-MODULARIZE modes generate it here.
 var _scriptName = typeof document != 'undefined' ? document.currentScript?.src : undefined;
@@ -33640,3 +33609,4 @@ run();
 		setTimeout(function() { Module._showLoadText = false; Module.setStatus(''); }, 1000);
 	})
 })();
+// end include: emscripten/post.js
