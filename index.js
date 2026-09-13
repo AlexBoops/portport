@@ -11478,46 +11478,42 @@ async function createWasm() {
   
   
   function _alDeleteBuffers(count, pBufferIds) {
-  if (ENVIRONMENT_IS_PTHREAD)
-    return proxyToMainThread(62, 0, 1, count, pBufferIds);
-  
-      if (!AL.currentCtx) {
+    if (ENVIRONMENT_IS_PTHREAD)
+      return proxyToMainThread(62, 0, 1, count, pBufferIds);
+
+    if (!AL.currentCtx) {
+      return;
+    }
+
+    for (var i = 0; i < count; ++i) {
+      var bufId = HEAP32[(((pBufferIds)+(i*4))>>2)];
+      if (bufId === 0) {
+        continue;
+      }
+
+      if (!AL.buffers[bufId]) {
+        AL.currentCtx.err = 40961;
         return;
       }
-  
-      for (var i = 0; i < count; ++i) {
-        var bufId = HEAP32[(((pBufferIds)+(i*4))>>2)];
-        /// Deleting the zero buffer is a legal NOP, so ignore it
-        if (bufId === 0) {
-          continue;
-        }
-  
-        // Make sure the buffer index is valid.
-        if (!AL.buffers[bufId]) {
-          AL.currentCtx.err = 40961;
-          return;
-        }
-  
-        // Make sure the buffer is no longer in use.
-        if (AL.buffers[bufId].refCount) {
-          AL.currentCtx.err = 40964;
-          return;
-        }
+
+      if (AL.buffers[bufId].refCount) {
+        AL.currentCtx.err = 40964;
+        return;
       }
-  
-      for (var i = 0; i < count; ++i) {
-        var bufId = HEAP32[(((pBufferIds)+(i*4))>>2)];
-        if (bufId === 0) {
-          continue;
-        }
-  
-		AL.deviceRefCounts[AL.buffers[bufId].deviceId]--;
-        delete AL.buffers[bufId];
-        AL.freeIds.push(bufId);
+    }
+
+    for (var i = 0; i < count; ++i) {
+      var bufId = HEAP32[(((pBufferIds)+(i*4))>>2)];
+      if (bufId === 0) {
+        continue;
       }
-  	}
+
+      AL.deviceRefCounts[AL.buffers[bufId].deviceId]--;
+      delete AL.buffers[bufId];
+      AL.freeIds.push(bufId);
+    }
   }
-  
+
   _alDeleteBuffers.sig = 'vip';
 
   
