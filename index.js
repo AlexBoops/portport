@@ -334,7 +334,7 @@ Module.downloadMap = (lock, mapName) => {
 		audioLoaded = true
 		loadAudio()
 	}
-...
+
 ```[cite: 2]
 
 Because the old copy was left above the new one, the old function with the unshifted `Atomics` lock and the blocking `loadMapWithDeps` runs first or causes parsing issues[cite: 2].
